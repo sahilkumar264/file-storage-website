@@ -37,6 +37,7 @@ fileInput.addEventListener('change', () => {
 });
 
 // Upload files
+// Upload files
 uploadBtn.addEventListener('click', () => {
   if (filesToUpload.length === 0) {
     messageDiv.style.color = 'red';
@@ -45,26 +46,34 @@ uploadBtn.addEventListener('click', () => {
   }
 
   const formData = new FormData();
-  // For simplicity, only uploading first file
-  formData.append('file', filesToUpload[0]);
+  formData.append('file', filesToUpload[0]); // Only uploading the first file
 
   fetch('/upload', {
     method: 'POST',
     body: formData
   })
-    .then(res => res.json())
+    .then(async (res) => {
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return res.json();
+      } else {
+        const text = await res.text();
+        throw new Error("Unexpected response:\n" + text);
+      }
+    })
     .then(data => {
       messageDiv.style.color = 'green';
       messageDiv.innerHTML = `Upload successful!<br>Download link:<br><a href="${data.link}" target="_blank">${data.link}</a><br>
         Link ID for delete: <code>${data.link.split('/').pop()}</code>`;
       filesToUpload = [];
-      fileInput.value = ''; // reset file input
+      fileInput.value = '';
     })
     .catch(err => {
       messageDiv.style.color = 'red';
       messageDiv.textContent = 'Upload failed: ' + err.message;
     });
 });
+
 
 // Download file by link
 downloadBtn.addEventListener('click', () => {

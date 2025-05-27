@@ -22,11 +22,14 @@ app.use(
 );
 
 // Multer setup for uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "./uploads"),
-  filename: (req, file, cb) => {
-    const uniqueName = uuidv4() + path.extname(file.originalname);
-    cb(null, uniqueName);
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("./cloudinary");
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "user_uploads",
+    resource_type: "auto", // allows any file type
   },
 });
 const upload = multer({ storage });
@@ -95,26 +98,46 @@ app.get("/", isAuthenticated, (req, res) => {
 });
 
 // Upload file
-app.post("/upload", isAuthenticated, upload.single("file"), (req, res) => {
-  if (!req.file) return res.status(400).send("No file uploaded");
-  const links = loadLinks();
+app.post(
+  "/upload",
+  isAuthenticated,
+  (req, res, next) => {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        console.error("Multer error:", err);
+        return res.status(500).send("Upload failed: " + err.message);
+      }
+      next();
+    });
+  },
+  (req, res) => {
+    try {
+      console.log("Uploading file for user:", req.session.userId);
+      if (!req.file) return res.status(400).send("No file uploaded");
+      console.log("Full file metadata from Cloudinary:", req.file);
+      const links = loadLinks();
+      const linkId = uuidv4();
 
-  // Generate unique link ID
-  const linkId = uuidv4();
+      links[linkId] = {
+        cloudUrl: req.file.path,
+        publicId: req.file.path.split('/').slice(-2).join('/').replace(/\.[^/.]+$/, ""),
+        originalName: req.file.originalname,
+        uploader: req.session.userId,
+        uploadedAt: Date.now(),
+      };
 
-  // Save link info
-  links[linkId] = {
-    filename: req.file.filename,
-    originalName: req.file.originalname,
-    uploader: req.session.userId,
-    uploadedAt: Date.now(),
-  };
+      saveLinks(links);
 
-  saveLinks(links);
-
-  const downloadUrl = `${req.protocol}://${req.get("host")}/download/${linkId}`;
-  res.json({ link: downloadUrl });
-});
+      const downloadUrl = `${req.protocol}://${req.get(
+        "host"
+      )}/download/${linkId}`;
+      res.json({ link: req.file.path });
+    } catch (err) {
+      console.error("Upload error:", err);
+      res.status(500).send("Internal Server Error");
+    }
+  }
+);
 
 // Download file by unique link id
 app.get("/download/:linkId", (req, res) => {
@@ -122,30 +145,47 @@ app.get("/download/:linkId", (req, res) => {
   const link = links[req.params.linkId];
   if (!link) return res.status(404).send("Invalid or expired link");
 
-  const filePath = path.join(__dirname, "uploads", link.filename);
-  if (!fs.existsSync(filePath)) return res.status(404).send("File not found");
-
-  res.download(filePath, link.originalName);
+  res.redirect(link.cloudUrl); // Redirect to Cloudinary-hosted file
 });
 
 // Delete file (only by uploader)
-app.post("/delete", isAuthenticated, (req, res) => {
-  const { linkId } = req.body;
-  const links = loadLinks();
-  const link = links[linkId];
-  if (!link) return res.status(404).send("Invalid link");
+app.post("/delete", isAuthenticated, async (req, res) => {
+  try {
+    const { linkId } = req.body;
+    const links = loadLinks();
+    const link = links[linkId];
+    if (!link) return res.status(404).send("Invalid link");
 
-  if (link.uploader !== req.session.userId) {
-    return res.status(403).send("You can only delete your own files");
+    if (link.uploader !== req.session.userId) {
+      return res.status(403).send("You can only delete your own files");
+    }
+
+    console.log("Full link data for deletion:", link);
+    console.log("Deleting file from Cloudinary with publicId:", link.publicId);
+
+   const result = await cloudinary.uploader.destroy(`user_uploads/${link.publicId}`, { resource_type: 'raw' });
+
+    console.log("Cloudinary delete result:", result);
+
+    if (result.result !== 'ok' && result.result !== 'not_found') {
+      return res.status(500).send("Failed to delete file from cloud storage");
+    }
+
+    delete links[linkId];
+    saveLinks(links);
+
+    res.send("File deleted successfully");
+  } catch (err) {
+    console.error("Delete error:", err);
+    res.status(500).send("Failed to delete file");
   }
+});
 
-  const filePath = path.join(__dirname, "uploads", link.filename);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
-  delete links[linkId];
-  saveLinks(links);
-
-  res.send("File deleted successfully");
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).send("Internal Server Error");
 });
 
 app.listen(PORT, () => {
