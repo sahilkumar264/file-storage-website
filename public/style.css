@@ -1,0 +1,114 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #f4f4f4;
+}
+
+.navbar {
+  background-color: black;
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.navbar-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.logout-btn {
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  color: white;
+  text-decoration: none;
+  background: #444;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.logout-btn:hover {
+  background: #666;
+}
+
+main {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.drop-area {
+  border: 3px dashed #999;
+  padding: 40px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.drop-area.dragover {
+  border-color: #333;
+  background-color: #eee;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 10px 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  background-color: black;
+  color: white;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #444;
+}
+
+input[type="text"], input[type="password"] {
+  width: 80%;
+  padding: 10px;
+  margin: 8px 0;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.auth-container {
+  max-width: 400px;
+  margin: 100px auto;
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.auth-container h2 {
+  margin-bottom: 20px;
+}
+
+.auth-container a {
+  color: black;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-container a:hover {
+  text-decoration: underline;
+}
+
+#message {
+  margin-top: 20px;
+  font-weight: bold;
+  color: green;
+}

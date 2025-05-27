@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Storage System and File Sharing</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-title">Storage System and File Sharing</div>
+    <a href="/logout" class="logout-btn">Logout</a>
+  </nav>
+
+  <main>
+    <div class="drop-area" id="drop-area">
+      <h3>Drag & Drop files here</h3>
+      <p>or</p>
+      <input type="file" id="fileElem" multiple hidden />
+      <button id="fileSelect">Select Files</button>
+    </div>
+
+    <button id="uploadBtn">Upload</button>
+
+    <h3>Download File</h3>
+    <input type="text" id="downloadLink" placeholder="Paste your download link here" />
+    <button id="downloadBtn">Download</button>
+
+    <h3>Delete File</h3>
+    <input type="text" id="deleteLinkId" placeholder="Paste your link ID here" />
+    <button id="deleteBtn">Delete File</button>
+
+    <div id="message"></div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
